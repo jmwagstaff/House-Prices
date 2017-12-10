@@ -5,7 +5,7 @@
 
 # This script fills in all missing values in both train and test datasets
 
-# To Use: Save the training and testing datasets to a folder named 'data' in your current directory 
+# To Use: Save the training and testing datasets to a folder named 'data' in your current directory
 # then run it in ipython with: %run missingValues.py
 
 # First let us import the required packages
@@ -15,10 +15,10 @@ import pandas as pd
 # Let's read-in the training dataset and the testing dataset
 trainData = pd.read_csv('data/train.csv')
 testData = pd.read_csv('data/test.csv')
-
+    
 # Now dealing with missing values in groups
 
-# 1. The basement group: 
+# 1. The basement group:
 
 # It will be useful to create a basement index for the relevant categories
 indBase = pd.Index(['BsmtQual','BsmtCond', 'BsmtExposure', 'BsmtFinType1', 'BsmtFinType2',
@@ -31,11 +31,11 @@ testData.loc[660, indBase[[5,6,7,8]] ] = testData.loc[660, indBase[[5,6,7,8]] ].
 
 # If we look at the problem observations again:
 # We can see that the four size variables 'BsmtFinSF1' 'BsmtFinSF2' 'BsmtUnfSF' and 'TotalBsmtSF'
-# are set to zero, confirming that these missing values are indeed No Basement. 
-# Here 'TotalBsmtSF' is presumably a sum of: 'BsmtFinSF1' 'BsmtFinSF2' 'BsmtUnfSF'. 
+# are set to zero, confirming that these missing values are indeed No Basement.
+# Here 'TotalBsmtSF' is presumably a sum of: 'BsmtFinSF1' 'BsmtFinSF2' 'BsmtUnfSF'.
 # So we can write something like: when 'TotalBsmtSF' == 0, set all other basement NaNs to 'NoBasement'
 
-# First create logical vector: 
+# First create logical vector:
 zeroB_train = trainData['TotalBsmtSF'] == 0
 zeroB_test = testData['TotalBsmtSF'] == 0
 # Fill in missing values for the categorical vars and the two 'BsmtFull/HalfBath' vars:
@@ -54,7 +54,7 @@ testData.loc[:, 'BsmtQual'] = testData.loc[:,'BsmtQual'].fillna("TA")
 # BsmtCond 0 3: the most typical value is TA, we could just assume TA as well
 testData.loc[:, 'BsmtCond'] = testData.loc[:,'BsmtCond'].fillna("TA")
 
-# BsmtExposure 1 2: Refers to walkout or garden level walls. 
+# BsmtExposure 1 2: Refers to walkout or garden level walls.
 # The most typical value is 'No' No Exposure, we could simply assume No as well
 trainData.loc[:, 'BsmtExposure'] = trainData.loc[:,'BsmtExposure'].fillna("No")
 testData.loc[:, 'BsmtExposure'] = testData.loc[:,'BsmtExposure'].fillna("No")
@@ -68,19 +68,19 @@ trainData.loc[:, 'BsmtFinType2'] = trainData.loc[:, 'BsmtFinType2'].fillna("GLQ"
 # 2. The garage group:
 
 # We start by creating a Garage index for the relevant categories
-indGarage = pd.Index(['GarageType', 'GarageFinish', 'GarageQual', 'GarageCond', 
+indGarage = pd.Index(['GarageType', 'GarageFinish', 'GarageQual', 'GarageCond',
                       'GarageYrBlt', 'GarageCars', 'GarageArea'])
 
 # We see one strange obs with missing values for the garage size, but with 'GarageType' = 'Detchd'
-# which means Detached from home. We can see thats it's not a second garage in Misc. 
+# which means Detached from home. We can see thats it's not a second garage in Misc.
 # We can assume this should be zero i.e. no Garage, let's set these sizes to zero:
 testData.loc[1116, indGarage[[5,6]] ] = testData.loc[1116, indGarage[[5,6]] ].fillna(0.0)
 testData.loc[1116, indGarage[[0]] ] = 'NaN' # clear the (probably) wrong category
 
-# Assume if 'GarageArea' is zero, these properties are without garages. Then all categories should be 
+# Assume if 'GarageArea' is zero, these properties are without garages. Then all categories should be
 # set to "NoGarage".
 
-# First create logical vector: 
+# First create logical vector:
 zeroG_train = trainData['GarageArea'] == 0
 zeroG_test = testData['GarageArea'] == 0
 
@@ -91,7 +91,7 @@ testData.loc[zeroG_test, indGarage[0:4] ] = testData.loc[zeroG_test, indGarage[0
 # And fill in the 'GarageYrBlt' with zeros:
 # To set the missing values in GarageYrBlt (Year garage was built), which is a continuous variable,
 # we could either set all dates to category and create new NoGarage cat, or set this missing value to zero.
-# Here we set it to zero. This is the same as creating a new variable 'WithGarage' that takes value 1 for yes, 
+# Here we set it to zero. This is the same as creating a new variable 'WithGarage' that takes value 1 for yes,
 # and 0 for no, and then an interaction term between the two.
 trainData.loc[zeroG_train, indGarage[4] ] = trainData.loc[zeroG_train, indGarage[4] ].fillna(0)
 testData.loc[zeroG_test, indGarage[4] ] = testData.loc[zeroG_test, indGarage[4] ].fillna(0)
@@ -101,11 +101,14 @@ testData.loc[zeroG_test, indGarage[4] ] = testData.loc[zeroG_test, indGarage[4] 
 
 # We are left with one obs in the test dataset which is a 'GarageType' = 'Detchd' for 'GarageCars' = 1.
 #testData['GarageCond'].value_counts()
-# Assume most common values: 'GarageFinish'=Unf, 'GarageQual'='GarageCond'=TA, 
+# Assume most common values: 'GarageFinish'=Unf, 'GarageQual'='GarageCond'=TA,
 # Assume 'GarageYrBlt' = 'YearBuilt'
 testData.loc[666, indGarage[[1]] ] = "Unf"
 testData.loc[666, indGarage[[2,3]] ] = testData.loc[666, indGarage[[2,3]] ].fillna("TA")
 testData.loc[666, indGarage[[4]] ] = testData.loc[666, 'YearBuilt' ]
+
+# There's one obs that say "NaN" as a string, change to cat
+testData.loc[1116, 'GarageType' ] = "NoGarage" # change value
 
 # That's it for the Garage group!
 
@@ -120,7 +123,7 @@ testData.loc[:, 'MasVnrArea'] = testData.loc[:, 'MasVnrArea'].fillna(0.0)
 
 # Assume if 'MasVnrArea' is zero, then MasVnrType should be set to "None".
 
-# First create logical vector: 
+# First create logical vector:
 zeroV_train = trainData['MasVnrArea'] == 0
 zeroV_test = testData['MasVnrArea'] == 0
 
